@@ -1,70 +1,42 @@
-name: Build APK
-
+name: CI
 on:
   push:
-    branches:
-      - main
-  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      # used to cache dependencies with a timeout
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "::name=date::$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+        shell: bash
 
-    - name: Install system dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y python3-pip python3-venv git zip openjdk-11-jdk wget unzip
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v3
+        with:
+          path: .buildozer_global
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }} # Replace with your path
 
-    - name: Set up Android SDK
-      run: |
-        mkdir -p $HOME/Android/cmdline-tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-        unzip cmdline-tools.zip -d $HOME/Android/cmdline-tools
-        mv $HOME/Android/cmdline-tools/cmdline-tools $HOME/Android/cmdline-tools/latest
-        export ANDROID_HOME=$HOME/Android
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;33.0.0" "platforms;android-33" "ndk;25.1.8937393"
+      - uses: actions/cache@v3
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('buildozer.spec') }}
 
-    - name: Debug Android tools
-      run: |
-        export ANDROID_HOME=$HOME/Android
-        ls -l $ANDROID_HOME
-        ls -l $ANDROID_HOME/cmdline-tools/latest
-        ls -l $ANDROID_HOME/ndk
-        ls -l $ANDROID_HOME/build-tools
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: stable
 
-    - name: Install Buildozer and dependencies
-      run: |
-        pip install --upgrade buildozer python-for-android cython==0.29.36 virtualenv
-
-    - name: Clean Buildozer environment
-      run: |
-        rm -rf .buildozer
-        rm -rf ~/.buildozer
-        buildozer android clean
-
-    - name: Initialize Buildozer
-      run: |
-        buildozer init
-
-    - name: Build APK
-      run: |
-        export ANDROID_HOME=$HOME/Android
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-        buildozer android debug
-
-    - name: Upload APK
-      uses: actions/upload-artifact@v3
-      with:
-        name: app-debug.apk
-        path: bin/*.apk
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: package
+          path: ${{ steps.buildozer.outputs.filename }}
