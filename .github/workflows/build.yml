@@ -30,14 +30,23 @@ jobs:
     # Paso 4: Configurar Android SDK
     - name: Set up Android SDK
       run: |
-        # Descargar y configurar las herramientas de línea de comandos del SDK
+        # Crear directorios para el SDK
+        mkdir -p $HOME/Android/cmdline-tools
+        # Descargar herramientas de línea de comandos
         wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-        mkdir -p $HOME/Android/cmdline-tools/latest
-        unzip cmdline-tools.zip -d $HOME/Android/cmdline-tools/latest
+        unzip cmdline-tools.zip -d $HOME/Android/cmdline-tools
+        mv $HOME/Android/cmdline-tools/cmdline-tools $HOME/Android/cmdline-tools/latest
+        # Configurar variables de entorno
         export ANDROID_HOME=$HOME/Android
         export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+        # Aceptar licencias
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+        # Instalar herramientas necesarias
         $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;33.0.0" "platforms;android-33"
+    - name: Debug Android SDK setup
+      run: |
+        ls -R $HOME/Android
+        ls $HOME/Android/cmdline-tools/latest/bin
 
     # Paso 5: Instalar Buildozer y dependencias de Python
     - name: Install Python dependencies
