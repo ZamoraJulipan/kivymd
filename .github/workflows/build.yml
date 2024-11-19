@@ -33,20 +33,23 @@ jobs:
         export ANDROID_HOME=$HOME/Android
         export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;33.0.0" "platforms;android-33" "cmdline-tools;latest"
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;33.0.0" "platforms;android-33" "ndk;25.1.8937393"
 
-    - name: Debug Build Tools
+    - name: Debug SDK and NDK paths
       run: |
         export ANDROID_HOME=$HOME/Android
-        ls $ANDROID_HOME/build-tools/33.0.0/
+        ls $ANDROID_HOME
+        ls $ANDROID_HOME/ndk
+        ls $ANDROID_HOME/build-tools
 
-    - name: Install Python dependencies
+    - name: Install Buildozer and Python dependencies
       run: |
-        pip install --upgrade buildozer cython==0.29.36 virtualenv
+        pip install --upgrade buildozer python-for-android cython==0.29.36 virtualenv
 
-    - name: Clean Buildozer environment
+    - name: Initialize Buildozer
       run: |
         buildozer android clean
+        buildozer init
 
     - name: Build APK
       run: |
