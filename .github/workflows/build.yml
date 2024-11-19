@@ -39,15 +39,18 @@ jobs:
       run: |
         export ANDROID_HOME=$HOME/Android
         ls -l $ANDROID_HOME
-        ls -l $ANDROID_HOME/build-tools
+        ls -l $ANDROID_HOME/cmdline-tools/latest
         ls -l $ANDROID_HOME/ndk
+        ls -l $ANDROID_HOME/build-tools
 
-    - name: Install Buildozer and Python dependencies
+    - name: Install Buildozer and dependencies
       run: |
         pip install --upgrade buildozer python-for-android cython==0.29.36 virtualenv
 
     - name: Clean Buildozer environment
       run: |
+        rm -rf .buildozer
+        rm -rf ~/.buildozer
         buildozer android clean
 
     - name: Initialize Buildozer
