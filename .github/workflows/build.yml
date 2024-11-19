@@ -3,7 +3,7 @@ name: Build APK
 on:
   push:
     branches:
-      - main  # Se ejecutará al hacer push en la rama principal
+      - main  # Ejecuta el flujo de trabajo al hacer push en la rama principal
   pull_request:
 
 jobs:
@@ -11,29 +11,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # Paso 1: Clonar el repositorio
     - name: Checkout code
       uses: actions/checkout@v3
 
+    # Paso 2: Configurar Python
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
-    - name: Install dependencies
+    # Paso 3: Instalar dependencias del sistema
+    - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install -y python3-pip python3-venv git zip
+        sudo apt install -y python3-pip python3-venv git zip openjdk-11-jdk wget unzip
+
+    # Paso 4: Configurar Android SDK
+    - name: Set up Android SDK
+      run: |
+        # Descargar y configurar las herramientas de línea de comandos del SDK
+        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+        mkdir -p $HOME/Android/cmdline-tools/latest
+        unzip cmdline-tools.zip -d $HOME/Android/cmdline-tools/latest
+        export ANDROID_HOME=$HOME/Android
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;33.0.0" "platforms;android-33"
+
+    # Paso 5: Instalar Buildozer y dependencias de Python
+    - name: Install Python dependencies
+      run: |
         pip install --upgrade buildozer cython==0.29.36 virtualenv
 
+    # Paso 6: Compilar APK con Buildozer
     - name: Build APK
       run: |
-        # Crea el entorno de compilación y construye el APK
-        sudo apt update && sudo apt install -y openjdk-11-jdk android-sdk
+        export ANDROID_HOME=$HOME/Android
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
         buildozer android debug
 
+    # Paso 7: Subir el APK generado como artefacto
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
         name: app-debug.apk
         path: bin/*.apk
-
