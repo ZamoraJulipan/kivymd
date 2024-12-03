@@ -20,7 +20,7 @@ MDFloatLayout:
         padding_x: dp(10)
         text: "Para la suma y la resta se debe cumplir que tengan el mismo tamaño. Es decir, la misma cantidad de filas y columnas. Y se suma o resta directamente con el elemento que esté en la misma posición, así:"
         halign: 'left'
-        pos_hint: {'center_y':0.85}
+        pos_hint: {'center_y':0.83}
     Image:
         source: 'sumamatriz.png'
         pos_hint: {'center_y':0.6}
